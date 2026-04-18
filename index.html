@@ -1,0 +1,128 @@
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Мой ToDo-лист</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="todo-container">
+        <h1>📝 Мой список дел</h1>
+        
+        <div class="input-group">
+            <input type="text" id="taskInput" placeholder="Например: выучить JavaScript">
+            <button id="addBtn" class="btn-add">➕ Добавить</button>
+        </div>
+        
+        <ul id="taskList">
+            <!-- Сюда будут добавляться задачи -->
+        </ul>
+    </div>
+
+    <script>
+        // JavaScript будет здесь
+        const taskInput = document.getElementById('taskInput');
+        const addBtn = document.getElementById('addBtn');
+        const taskList = document.getElementById('taskList');
+
+        let tasks = [];
+
+        function renderTasks() {
+            // 1. Очищаем список
+            taskList.innerHTML = '';
+            
+            // 2. Проходим по каждой задаче в массиве
+            tasks.forEach((task, index) => {
+                // 3. Создаём элемент <li>
+                const li = document.createElement('li');
+                li.textContent = task.text;
+                
+                // 4. Если задача выполнена — зачёркиваем
+                if (task.completed) {
+                    li.style.textDecoration = 'line-through';
+                    li.style.color = '#888';
+                }
+                
+                // 5. Клик по задаче — меняем статус
+                li.addEventListener('click', () => {
+                    task.completed = !task.completed;
+                    renderTasks();  // перерисовываем
+                });
+                
+                // 6. Создаём кнопку удаления
+                const deleteBtn = document.createElement('button');
+                deleteBtn.textContent = '✖';
+                deleteBtn.style.marginLeft = '10px';
+                deleteBtn.style.cursor = 'pointer';
+                
+                // 7. Клик по кнопке удаления
+                deleteBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();  // останавливаем всплытие
+                    tasks.splice(index, 1);  // удаляем задачу
+                    renderTasks();  // перерисовываем
+                });
+                
+                // 8. Добавляем кнопку в <li>
+                li.appendChild(deleteBtn);
+                
+                // 9. Добавляем <li> в список
+                taskList.appendChild(li);
+            });
+            
+            // 10. Сохраняем задачи в localStorage
+            saveTasks();
+        }
+
+        function addTask() {
+            // Получаем текст и убираем пробелы по краям
+            const text = taskInput.value.trim();
+            
+            // Проверяем, не пустое ли поле
+            if (text === '') {
+                alert('Введите текст задачи!');
+                return;  // выходим из функции
+            }
+            
+            // Добавляем новую задачу в массив
+            tasks.push({
+                text: text,
+                completed: false
+            });
+            
+            // Очищаем поле ввода
+            taskInput.value = '';
+            
+            // Перерисовываем список
+            renderTasks();
+        }
+
+        // Сохранение в localStorage
+        function saveTasks() {
+            localStorage.setItem('tasks', JSON.stringify(tasks));
+        }
+
+        // Загрузка из localStorage
+        function loadTasks() {
+            const saved = localStorage.getItem('tasks');
+            if (saved) {
+                tasks = JSON.parse(saved);
+            }
+            renderTasks();
+        }
+
+        addBtn.addEventListener('click', addTask);
+
+        // Добавление по нажатию Enter
+        taskInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                addTask();
+            }
+        });
+
+        // Загружаем задачи при старте
+        loadTasks();
+
+        
+    </script>
+</body>
+</html>

@@ -8,6 +8,19 @@
 <body>
     <div class="todo-container">
         <h1>📝 Мой список дел</h1>
+
+        <!-- Блок фильтров -->
+        <div class="filter-group">
+            <button class="filter-btn active" data-filter="all">Все</button>
+            <button class="filter-btn" data-filter="active">Активные</button>
+            <button class="filter-btn" data-filter="completed">Выполненные</button>
+        </div>
+
+        <!-- Блок информации и очистки -->
+        <div class="info-group">
+            <span id="taskCounter">0</span> задач осталось
+            <button id="clearAllBtn" class="btn-clear">Очистить все</button>
+        </div>
         
         <div class="input-group">
             <input type="text" id="taskInput" placeholder="Например: выучить JavaScript">
@@ -24,52 +37,75 @@
         const taskInput = document.getElementById('taskInput');
         const addBtn = document.getElementById('addBtn');
         const taskList = document.getElementById('taskList');
+        const taskCounter = document.getElementById('taskCounter');
+        const clearAllBtn = document.getElementById('clearAllBtn');
+        const filterBtns = document.querySelectorAll('.filter-btn');
 
         let tasks = [];
+        let currentFilter = 'all';
+
+        // Возвращает массив задач в зависимости от выбранного фильтра
+        function getFilteredTasks() {
+            if (currentFilter === 'active') {
+                // Оставляем только те задачи, у которых completed === false
+                return tasks.filter(task => !task.completed);
+            } 
+            else if (currentFilter === 'completed') {
+                // Оставляем только те задачи, у которых completed === true
+                return tasks.filter(task => task.completed);
+            }
+            // 'all' — возвращаем все задачи
+            return tasks;
+        }
 
         function renderTasks() {
-            // 1. Очищаем список
+            // Очищаем список
             taskList.innerHTML = '';
             
-            // 2. Проходим по каждой задаче в массиве
-            tasks.forEach((task, index) => {
-                // 3. Создаём элемент <li>
+            // Получаем отфильтрованные задачи
+            const filteredTasks = getFilteredTasks();
+            
+            // Считаем активные (невыполненные) задачи
+            const activeCount = tasks.filter(task => !task.completed).length;
+            taskCounter.textContent = activeCount;
+            
+            // Отображаем только отфильтрованные задачи
+            filteredTasks.forEach((task, filteredIndex) => {
+                // Находим реальный индекс задачи в ОСНОВНОМ массиве tasks
+                const realIndex = tasks.findIndex(t => t === task);
+                
                 const li = document.createElement('li');
                 li.textContent = task.text;
                 
-                // 4. Если задача выполнена — зачёркиваем
                 if (task.completed) {
                     li.style.textDecoration = 'line-through';
                     li.style.color = '#888';
                 }
                 
-                // 5. Клик по задаче — меняем статус
+                // Клик по задаче — меняем статус
                 li.addEventListener('click', () => {
-                    task.completed = !task.completed;
-                    renderTasks();  // перерисовываем
+                    tasks[realIndex].completed = !tasks[realIndex].completed;
+                    saveTasks();
+                    renderTasks();
                 });
                 
-                // 6. Создаём кнопку удаления
+                // Кнопка удаления
                 const deleteBtn = document.createElement('button');
                 deleteBtn.textContent = '✖';
                 deleteBtn.style.marginLeft = '10px';
                 deleteBtn.style.cursor = 'pointer';
                 
-                // 7. Клик по кнопке удаления
                 deleteBtn.addEventListener('click', (e) => {
-                    e.stopPropagation();  // останавливаем всплытие
-                    tasks.splice(index, 1);  // удаляем задачу
-                    renderTasks();  // перерисовываем
+                    e.stopPropagation();
+                    tasks.splice(realIndex, 1);
+                    saveTasks();
+                    renderTasks();
                 });
                 
-                // 8. Добавляем кнопку в <li>
                 li.appendChild(deleteBtn);
-                
-                // 9. Добавляем <li> в список
                 taskList.appendChild(li);
             });
             
-            // 10. Сохраняем задачи в localStorage
             saveTasks();
         }
 
@@ -94,6 +130,18 @@
             
             // Перерисовываем список
             renderTasks();
+        }
+
+        // Очистка всех задач
+        function clearAllTasks() {
+            if (tasks.length === 0) return;
+            
+            const confirmed = confirm('Вы уверены, что хотите удалить все задачи?');
+            if (confirmed) {
+                tasks = [];
+                saveTasks();
+                renderTasks();
+            }
         }
 
         // Сохранение в localStorage
@@ -121,6 +169,26 @@
 
         // Загружаем задачи при старте
         loadTasks();
+
+        // Обработчик кнопки очистки
+        clearAllBtn.addEventListener('click', clearAllTasks);
+
+        // Обработчики для кнопок фильтров
+        filterBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                // Убираем класс active у всех кнопок
+                filterBtns.forEach(b => b.classList.remove('active'));
+                
+                // Добавляем класс active текущей кнопке
+                btn.classList.add('active');
+                
+                // Обновляем значение фильтра
+                currentFilter = btn.dataset.filter;
+                
+                // Перерисовываем список с новым фильтром
+                renderTasks();
+            });
+        });
 
         
     </script>
